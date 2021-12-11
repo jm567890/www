@@ -18,7 +18,7 @@
 - 등등..
 
 ## 🌠 세팅 사항  
-Setting.md 참고
+Setting.md 참고   
 footer.html >> src/main/resource/fragments 
 
 ## 🌠 프로젝트 구조
