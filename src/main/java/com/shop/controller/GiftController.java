@@ -1,9 +1,6 @@
 package com.shop.controller;
 
-import com.shop.dto.AddressDto;
-import com.shop.dto.GiftMainItemDto;
-import com.shop.dto.ItemSearchDto;
-import com.shop.dto.OrderDto;
+import com.shop.dto.*;
 import com.shop.service.AddressService;
 import com.shop.service.ItemService;
 import com.shop.service.OrderService;
@@ -93,61 +90,36 @@ public class GiftController {
 
     // 선물하기 폼
     @GetMapping(value ="/giftForm/{itemId}")
-    public String giftForm(Model model, @PathVariable("itemId") Long itemId, @RequestParam("count") String count){
-        log.info("itemId: " + itemId);
-        log.info("count: " + count);
+    public String giftForm(@PathVariable("itemId") Long itemId, @RequestParam("count") Integer count, Model model) {
+        GiftDto giftDto = new GiftDto();
+        giftDto.setItemId(itemId);
+        giftDto.setCount(count);
 
-        model.addAttribute("addressDto", new AddressDto());
-        model.addAttribute("itemId", itemId);
-        model.addAttribute("count", count);
-        return "order/giftForm";
-    }
+        model.addAttribute("giftDto", giftDto);
 
-    @PostMapping(value = "/address")
-    // 검증하려는 객체에 @Valid 선언, 결과는 bindingResult에 담아줌
-    public String address(@RequestBody @Valid AddressDto addressDto,
-                          BindingResult bindingResult, Principal principal) {
-
-        if (bindingResult.hasErrors()) {
-            return "order/giftForm";
-        }
-
-        Long memberId;
-        String email = principal.getName();           // principal 객체에서
-        System.out.println(addressDto.toString());
-        memberId = addressService.address(addressDto,email);
-
-        System.out.println("=========================>" + memberId);
-
-        return "redirect:/";
+        return "gift/giftForm";
     }
 
     // 선물
     @PostMapping(value = "/gift")
-    public @ResponseBody
-    ResponseEntity gift(@RequestBody @Valid OrderDto orderDto,
-                        BindingResult bindingResult, Principal principal) {
-
-        if (bindingResult.hasErrors()) {                // orderDTO 객체에 데이터 바인딩시 에러 검사
-            StringBuilder sb = new StringBuilder();
-            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
-            for (FieldError fieldError : fieldErrors) {
-                sb.append(fieldError.getDefaultMessage());
-            }
-            return new ResponseEntity<String>(sb.toString(),
-                    HttpStatus.BAD_REQUEST);           // 에러 정보를 ResponseEntity 객체에 담아서 반환
+    public String gift(@Valid GiftDto giftDto, BindingResult bindingResult, Principal principal, Model model) {
+        if(bindingResult.hasErrors()) {
+            return "gift/giftForm";
         }
 
-        String email = principal.getName();           // principal 객체에서 현재 로그인한 회원의 이메일 정보 조회
-        Long orderId;
+        String email = principal.getName();
 
         try {
-            orderId = orderService.gift(orderDto, email);          // 주문 로직 호출
-        } catch (Exception e) {
-            return new ResponseEntity<String>(e.getMessage(),
-                    HttpStatus.BAD_REQUEST);
+            orderService.order(giftDto.toOrderDto(), email);
+            addressService.saveAddress(giftDto.toAddressDto(), email);
+        } catch(Exception e) {
+            log.error(e.getMessage(), e);
+
+            return "gift/giftForm";
         }
 
-        return new ResponseEntity<Long>(orderId, HttpStatus.OK);    // HTTP 응답 상태 코드 반환
+        model.addAttribute("message", "선물하기가 완료되었습니다.");
+
+        return "redirect:/orders";
     }
 }

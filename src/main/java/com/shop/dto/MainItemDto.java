@@ -3,13 +3,14 @@ package com.shop.dto;
 import com.querydsl.core.annotations.QueryProjection;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
-@Getter @Setter
+@Getter
+@Setter
+@ToString
 public class MainItemDto {
 
     private Long id;
-
-    private Long cateCode;
 
     private String itemNm;
 
@@ -19,15 +20,16 @@ public class MainItemDto {
 
     private Integer price;
 
+    private Integer shippingFee;
 
-    // 상품 조회 시 DTO 객체로 결과 값을 받음
     @QueryProjection
-    public MainItemDto(Long id, String itemNm, String itemDetail,
-                       String imgUrl, Integer price){
+    public MainItemDto(Long id, String itemNm, String itemDetail, String imgUrl, Integer price, Integer shippingFee) {
         this.id = id;
         this.itemNm = itemNm;
         this.itemDetail = itemDetail;
         this.imgUrl = imgUrl;
         this.price = price;
+        this.shippingFee = shippingFee;
     }
+
 }

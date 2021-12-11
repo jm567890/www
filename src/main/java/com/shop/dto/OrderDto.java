@@ -19,6 +19,10 @@ public class OrderDto {
     @Max(value = 999, message = "최대 주문 수량은 999개 입니다.")
     private int count;
 
+    private String address;
+
+    private String addressDetail;
+
     private GiftStatus giftStatus;         // 구매 선물 상태
 
     private String from;

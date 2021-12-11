@@ -26,7 +26,11 @@ public class Member extends BaseEntity{
 
     private String password;
 
+    @Column(nullable = false)
     private String address;
+
+    @Column(nullable = false)
+    private String addressDetail;
 
     @Enumerated(EnumType.STRING)     // enum 속성 string 저장 권장
     private Role role;
@@ -38,11 +42,10 @@ public class Member extends BaseEntity{
         member.setName(memberFormDto.getName());
         member.setEmail(memberFormDto.getEmail());
         member.setAddress(memberFormDto.getAddress());
+        member.setAddressDetail(memberFormDto.getAddressDetail());
         String password = passwordEncoder.encode(memberFormDto.getPassword());
         member.setPassword(password);
-        member.setRole(memberFormDto.getRole());
-
-        System.out.println(memberFormDto.toString());
+        member.setRole(Role.ADMIN);
 
         return member;
 

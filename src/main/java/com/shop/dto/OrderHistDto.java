@@ -5,12 +5,13 @@ import com.shop.constant.OrderStatus;
 import com.shop.entity.Order;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-
+@ToString
 @Getter @Setter
 public class OrderHistDto {
 
@@ -19,6 +20,7 @@ public class OrderHistDto {
         this.orderDate =
                 order.getOrderDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         this.orderStatus = order.getOrderStatus();
+        this.orderAddress = order.getAddress();
         this.giftStatus = order.getGiftStatus();
     }
 
@@ -30,6 +32,8 @@ public class OrderHistDto {
 
     private GiftStatus giftStatus;    //  구매/선물 상태
 
+    private String orderAddress;
+
     // 주문 상품 리스트
     private List<OrderItemDto> orderItemDtoList = new ArrayList<>();
 
@@ -38,13 +42,5 @@ public class OrderHistDto {
         orderItemDtoList.add(orderItemDto);
     }
 
-    @Override
-    public String toString() {
-        return "OrderHistDto{" +
-                "orderId=" + orderId +
-                ", orderDate='" + orderDate + '\'' +
-                ", orderStatus=" + orderStatus +
-                ", orderItemDtoList=" + orderItemDtoList +
-                '}';
-    }
+
 }

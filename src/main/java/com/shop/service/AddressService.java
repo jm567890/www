@@ -16,14 +16,12 @@ public class AddressService {
     private final MemberRepository memberRepository;
 
     // 주소록 추가
-    public Long address(AddressDto addressDto, String email){
-
-        // email을 이용해 회원 정보 조회
+    public Long saveAddress(AddressDto addressDto, String email) {
         Member member = memberRepository.findByEmail(email);
-
         Address address = Address.createAddress(member, addressDto);
+
         addressRepository.save(address);
 
-        return member.getId();
+        return address.getId();
     }
 }

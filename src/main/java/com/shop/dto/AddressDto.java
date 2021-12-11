@@ -2,9 +2,11 @@ package com.shop.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
+@ToString
 public class AddressDto {
 
     private String Id;
@@ -15,13 +17,6 @@ public class AddressDto {
 
     private String address;
 
-    @Override
-    public String toString() {
-        return "AddressDto{" +
-                "memberId='" + Id + '\'' +
-                ", name='" + name + '\'' +
-                ", phone='" + phone + '\'' +
-                ", address='" + address + '\'' +
-                '}';
-    }
+    private String addressDetail;
+
 }

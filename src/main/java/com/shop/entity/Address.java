@@ -27,13 +27,16 @@ public class Address {
 
     private String address;
 
+    private String addressDetail;
+
     public static Address createAddress(Member member, AddressDto addressDto) {
 
         Address address =new Address();
         address.setMember(member);
         address.name = addressDto.getAddress();
         address.phone = addressDto.getPhone();
-        address.address = addressDto.getName();
+        address.setAddress(addressDto.getAddress());
+        address.setAddressDetail(addressDto.getAddressDetail());
 
         return address;
     }

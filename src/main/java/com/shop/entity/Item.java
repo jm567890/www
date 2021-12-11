@@ -41,15 +41,18 @@ public class Item extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private ItemSellStatus itemSellStatus;    // 상품 판매 상태
 
+    @Column(nullable = false)
+    private Integer shippingFee; // 배송비
 
-    public static Item createItem(ItemFormDto itemFormDto, Category category){
+    public static Item createItem(ItemFormDto itemFormDto, Category category) {
         Item item = new Item();
+        item.setItemNm(itemFormDto.getItemNm());
         item.setCategory(category);
-        item.itemNm = itemFormDto.getItemNm();
-        item.price = itemFormDto.getPrice();
-        item.stockNumber = itemFormDto.getStockNumber();
-        item.itemDetail = itemFormDto.getItemDetail();
-        item.itemSellStatus = itemFormDto.getItemSellStatus();
+        item.setPrice(itemFormDto.getPrice());
+        item.setStockNumber(itemFormDto.getStockNumber());
+        item.setItemDetail(itemFormDto.getItemDetail());
+        item.setItemSellStatus(itemFormDto.getItemSellStatus());
+        item.setShippingFee(itemFormDto.getShippingFee());
 
         return item;
     }
@@ -61,6 +64,8 @@ public class Item extends BaseEntity{
         this.stockNumber = itemFormDto.getStockNumber();
         this.itemDetail = itemFormDto.getItemDetail();
         this.itemSellStatus = itemFormDto.getItemSellStatus();
+        this.shippingFee = itemFormDto.getShippingFee();
+
     }
 
     // 상품 재고 감소 로직

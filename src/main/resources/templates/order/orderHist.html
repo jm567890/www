@@ -38,7 +38,7 @@
                     console.log("success", paramData);
                     console.log(result);
 
-                    location.href="/ordersStatus/"+$("#statSelect").val();
+                    location.href = "/ordersStatus/" + $("#statSelect").val();
                     alert("상태 갱신 완료");
                 },
                 error: function () {
@@ -49,45 +49,45 @@
         }
 
 
-            function cancelOrder(orderId) {
-                console.log("orderId : " + orderId);
+        function cancelOrder(orderId) {
+            console.log("orderId : " + orderId);
 
-                var token = $("meta[name='_csrf']").attr("content");
-                var header = $("meta[name='_csrf_header']").attr("content");
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
 
-                var url = "/order/" + orderId + "/cancel";
-                var paramData = {
-                    orderId: orderId,
-                };
+            var url = "/order/" + orderId + "/cancel";
+            var paramData = {
+                orderId: orderId,
+            };
 
-                var param = JSON.stringify(paramData);
+            var param = JSON.stringify(paramData);
 
-                $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json",
-                    data: param,
-                    beforeSend: function (xhr) {
-                        /* 데이터를 전송하기 전에 헤더에 csrf값을 설정 */
-                        xhr.setRequestHeader(header, token);
-                    },
-                    dataType: "json",
-                    cache: false,
-                    success: function (result, status) {
-                        alert("주문이 취소 되었습니다.");
-                        console.log(result);
-                        location.href = '/orders/' + [[${page}]];
-                    },
-                    error: function (jqXHR, status, error) {
-                        if (jqXHR.status == '401') {
-                            alert('로그인 후 이용해주세요');
-                            location.href = '/members/login';
-                        } else {
-                            alert(jqXHR.responseText);
-                        }
+            $.ajax({
+                url: url,
+                type: "POST",
+                contentType: "application/json",
+                data: param,
+                beforeSend: function (xhr) {
+                    /* 데이터를 전송하기 전에 헤더에 csrf값을 설정 */
+                    xhr.setRequestHeader(header, token);
+                },
+                dataType: "json",
+                cache: false,
+                success: function (result, status) {
+                    alert("주문이 취소 되었습니다.");
+                    console.log(result);
+                    location.href = '/orders/' + [[${page}]];
+                },
+                error: function (jqXHR, status, error) {
+                    if (jqXHR.status == '401') {
+                        alert('로그인 후 이용해주세요');
+                        location.href = '/members/login';
+                    } else {
+                        alert(jqXHR.responseText);
                     }
+                }
 
-                });
+            });
         }
 
     </script>
@@ -179,9 +179,13 @@
                     </div>
                     <div class="align-self-center w-75">
                         <span th:text="${orderItem.itemNm}" class="fs24 font-weight-bold"></span>
-                        <div class="fs18 font-weight-light">
-                            <span th:text="${orderItem.orderPrice} +'원'"></span>
+                        <div class="fs18 font-weight-light" style="margin-top: 10px;">
+                            <br><span th:text="'배송지 : '+${order.orderAddress}"></span></br>
+                            <span th:text="${#numbers.formatCurrency(orderItem.orderPrice)}"></span>
                             <span th:text="${orderItem.count} +'개'"></span>
+                            <small class="text-danger">(배송비 :
+                                <th:block th:text="${#numbers.formatCurrency(orderItem.orderShippingFee)}"></th:block>
+                                )</small>
                         </div>
                     </div>
                 </div>

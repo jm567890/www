@@ -13,8 +13,8 @@ public class OrderItemDto {
         this.itemNm = orderItem.getItem().getItemNm();
         this.count = orderItem.getCount();
         this.orderPrice = orderItem.getOrderPrice();
+        this.orderShippingFee = orderItem.getItem().getShippingFee();
         this.imgUrl = imgUrl;
-//        this.giftStatus = orderItem.getGiftStatus();
     }
 
     private String itemNm;    // 상품명
@@ -23,9 +23,9 @@ public class OrderItemDto {
 
     private int orderPrice; // 주문 금액
 
-    private String imgUrl;  // 상품 이미지 경로
+    private int orderShippingFee;
 
-    private GiftStatus giftStatus;          // 구매 선물 상태
+    private String imgUrl;  // 상품 이미지 경로
 
 
 }

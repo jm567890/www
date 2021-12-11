@@ -25,9 +25,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     MemberService memberService;
 
-    @Autowired
-    CustomOAuth2UserService customOAuth2UserService;
-
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
@@ -39,13 +36,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .logout()
                 .logoutRequestMatcher(new AntPathRequestMatcher("/members/logout"))
-                .logoutSuccessUrl("/")
-                .and()
+                .logoutSuccessUrl("/");
 
-                // oauth2 연동
-                .oauth2Login()
-                .userInfoEndpoint()
-                .userService(customOAuth2UserService);
 
 
         http.authorizeRequests()

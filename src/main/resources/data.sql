@@ -1,5 +1,2 @@
-INSERT INTO `mybatis` (`id`, `email`)
-VALUES (1, 'mybatis@gsitm.com');
-
-INSERT INTO `mybatis2` (`id`, `email`)
-VALUES (1, 'mybatis@gsitm.com');
+INSERT INTO it1665.category (cate_code, cate_name) VALUES (1,"레드"), (2,"화이트"), (3,"스파클링"), (4,"로제"), (5,"기타");
+INSERT INTO it1665.tag (`tag_id`, `tag_content`, `tag_nm`, `total_sell`) VALUES ('1', '거실관련 가구', '거실', '50'), ('2', '침실관련 가구', '침실', '20'), ('3', '1인 전용 가구', '1인', '60'), ('4', '다수 인원용 가구', '4인', '22'), ('5', '계절별 가구_봄', '봄', '23'), ('6', '계절별 가구_여름', '여름', '55'), ('7', '계절별 가구_가을', '가을', '25'), ('8', '계절별 가구_겨울', '겨울', '23');

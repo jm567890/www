@@ -2,12 +2,18 @@ package com.shop.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shop.constant.ItemComplexSearchSortColumn;
+import com.shop.dto.ItemComplexSearchDto;
 import com.shop.dto.ItemFormDto;
 import com.shop.dto.ItemSearchDto;
+import com.shop.dto.MainItemDto;
 import com.shop.entity.Item;
 import com.shop.repository.CategoryRepository;
+import com.shop.service.CategoryService;
 import com.shop.service.ItemService;
+import com.shop.service.TagService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,134 +30,132 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class ItemController {
 
+    private final TagService tagService;
+    private final CategoryService categoryService;
     private final ItemService itemService;
-    private final CategoryRepository categoryRepository;
 
     @GetMapping(value = "/admin/item/new")
     public String itemForm(Model model){
+        model.addAttribute("categoryList", categoryService.getCategoryList());
+        model.addAttribute("tagList", tagService.getTagList());
         model.addAttribute("itemFormDto", new ItemFormDto());
+
         return "item/itemForm" ;
     }
 
     // 상품 등록
     @PostMapping(value = "/admin/item/new")
-    public String itemNew(@Valid ItemFormDto itemFormDto, BindingResult bindingResult, Model model,
-                          @RequestParam("itemImgFile") List<MultipartFile> itemImgFileList){
+    public String itemNew(@Valid ItemFormDto itemFormDto, BindingResult bindingResult, @RequestParam("itemImgFile") List<MultipartFile> itemImgFileList, Model model) {
+        model.addAttribute("categoryList", categoryService.getCategoryList());
+        model.addAttribute("tagList", tagService.getTagList());
 
-        // 필수 값이 없다면 상품 등록 페이지로 다시 전환
-        if(bindingResult.hasErrors()){
+        if(bindingResult.hasErrors()) {
             return "item/itemForm";
         }
 
-        // 첫번째 이미지가 없다면 다시 전환
-        if(itemImgFileList.get(0).isEmpty() && itemFormDto.getId() == null){
+        if(itemImgFileList.get(0).isEmpty() && itemFormDto.getId() == null) {
             model.addAttribute("errorMessage", "첫번째 상품 이미지는 필수 입력 값 입니다.");
+
             return "item/itemForm";
         }
 
-        try{
-            System.out.println("=====================>" + itemFormDto.toString());
-            itemService.saveItem(itemFormDto, itemImgFileList);         // 상품 저장 로직 호출
+        try {
+            itemService.saveItem(itemFormDto, itemImgFileList);
 
-        }catch (Exception e){
-            model.addAttribute("errorMessage" , "상품 등록 중 에러가 발생하였습니다.");
+        } catch(Exception e) {
+            model.addAttribute("errorMessage", "상품 등록 중 에러가 발생하였습니다.");
+
             return "item/itemForm";
         }
 
-        return "redirect:/";        // 메인 페이지로 이동
+        return "redirect:/admin/items";
     }
 
-
-    // 상품 수정 페이지
     @GetMapping(value = "/admin/item/{itemId}")
-    public String itemDtl(@PathVariable("itemId") Long itemId, Model model){
+    public String itemFormUpdate(@PathVariable("itemId") Long itemId, Model model) {
+        model.addAttribute("categoryList", categoryService.getCategoryList());
+        model.addAttribute("tagList", tagService.getTagList());
 
-        try{
-            ItemFormDto itemFormDto = itemService.getItemDtl(itemId);       // 조회한 상품 데이터를 뷰로 전달
+        try {
+            ItemFormDto itemFormDto = itemService.getItemDtl(itemId);
+
             model.addAttribute("itemFormDto", itemFormDto);
-        }catch (EntityNotFoundException e){                                 // 엔티티가 존재하지 않을 경우
-                                                                            // 에러메시지를 담아 페이지 이동
-            model.addAttribute("errorMessage", "존재하지 않는 상품입니다.");
+        } catch(EntityNotFoundException e) {
+            model.addAttribute("errorMessage", "존재하지 않는 상품 입니다.");
             model.addAttribute("itemFormDto", new ItemFormDto());
+
             return "item/itemForm";
         }
+
         return "item/itemForm";
     }
 
-    @PostMapping(value="/admin/item/{itemId}")
-    public String itemUpdate(@Valid ItemFormDto itemFormDto,
-                             BindingResult bindingResult, @RequestParam("itemImgFile") List<MultipartFile>
-                                         itemImgFileList, Model model) {
-        if (bindingResult.hasErrors()) {
+
+    @PostMapping(value = "/admin/item/{itemId}")
+    public String itemUpdate(@Valid ItemFormDto itemFormDto, BindingResult bindingResult, @RequestParam("itemImgFile") List<MultipartFile> itemImgFileList, Model model) {
+        model.addAttribute("categoryList", categoryService.getCategoryList());
+        model.addAttribute("tagList", tagService.getTagList());
+
+        if(bindingResult.hasErrors()) {
             return "item/itemForm";
         }
 
-        if (itemImgFileList.get(0).isEmpty() && itemFormDto.getId() == null ) {
-            model.addAttribute("errorMessage", "첫번째 상품 이미지는 필수 입력 값입니다.");
+        if(itemImgFileList.get(0).isEmpty() && itemFormDto.getId() == null) {
+            model.addAttribute("errorMessage", "첫번째 상품 이미지는 필수 입력 값 입니다.");
+
             return "item/itemForm";
         }
-        try{
+
+        try {
             itemService.updateItem(itemFormDto, itemImgFileList);
-        }catch (Exception e){
+        } catch(Exception e) {
             model.addAttribute("errorMessage", "상품 수정 중 에러가 발생하였습니다.");
+
             return "item/itemForm";
         }
-        return "redirect:/";
+
+        return "redirect:/admin/items";
     }
 
     // 상품 관리 페이지
     @GetMapping(value = {"/admin/items", "/admin/items/{page}"})
     public String itemManage(ItemSearchDto itemSearchDto, @PathVariable("page")Optional<Integer> page, Model model){
         Pageable pageable = PageRequest.of(page.isPresent() ? page.get() : 0, 3);
+        Page<Item> items = itemService.getAdminItemPage(itemSearchDto, pageable);
 
-            Page<Item> items =
-        itemService.getAdminItemPage(itemSearchDto, pageable);
             model.addAttribute("items", items);
             model.addAttribute("itemSearchDto", itemSearchDto);
             model.addAttribute("maxPage", 5);
             return "item/itemMng";
     }
 
-    // 상품 상세 페이지 이동
-    @GetMapping(value ="/item/{itemId}")
-    public String itemDtl(Model model, @PathVariable("itemId") Long itemId){
-        System.out.println("====================>" + itemId);
+    @GetMapping(value = "/item/{itemId}")
+    public String itemDtl(@PathVariable("itemId") Long itemId, Model model) {
         ItemFormDto itemFormDto = itemService.getItemDtl(itemId);
+        log.info("itemFormDto : " + itemFormDto.toString());
         model.addAttribute("item", itemFormDto);
 
         return "item/itemDtl";
-//      return "item/itemDtlApi";
     }
 
-    // api 방식
-    @GetMapping(value = "/item/{itemId}/api")
-    public @ResponseBody ResponseEntity itemDtlApi(@PathVariable("itemId") Long itemId)
-            throws JsonProcessingException {
+    @GetMapping(value = { "/items", "/items/{page}" })
+    public String itemList(ItemComplexSearchDto itemComplexSearchDto, Optional<Integer> page, Model model) {
+        Pageable pageable = PageRequest.of(page.isPresent() ? page.get() : 0, 10);
+        Page<MainItemDto> items = itemService.getComplexSearchPage(itemComplexSearchDto, pageable);
 
-        // Jackson 객체 생성
-        ObjectMapper objectMapper = new ObjectMapper();
+        model.addAttribute("categoryList", categoryService.getCategoryList());
+        model.addAttribute("tagList", tagService.getTagList());
+        model.addAttribute("itemComplexSearchDto", itemComplexSearchDto);
+        model.addAttribute("items", items);
+        model.addAttribute("maxPage", 5);
 
-        // DTO 객체
-        ItemFormDto itemFormDto = itemService.getItemDtl(itemId);
-        itemFormDto.setItemNm(itemFormDto.getItemNm());
-        itemFormDto.setItemDetail(itemFormDto.getItemDetail());
-
-        // DTO 객체를 Json 형식으로 변환
-        String json;
-
-        try {
-            json = objectMapper.writeValueAsString(itemFormDto);
-        } catch(Exception e) {
-            return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-
-        // 성공적으로 변환되면 Json 반환
-        return new ResponseEntity<String>(json, HttpStatus.OK);
-
+        return "item/itemList";
     }
+
 
 }

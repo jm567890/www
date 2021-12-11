@@ -1,23 +1,26 @@
 package com.shop.repository;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.shop.constant.ItemComplexSearchSortColumn;
 import com.shop.constant.ItemSellStatus;
 import com.shop.dto.*;
-import com.shop.entity.Item;
-import com.shop.entity.QCategory;
-import com.shop.entity.QItem;
-import com.shop.entity.QItemImg;
+import com.shop.entity.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.thymeleaf.util.StringUtils;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // ItemRepositoryCustom 상속
@@ -53,17 +56,57 @@ public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // Ite
     }
 
     // 상품명 또는 상품 생성자 아이디 또는 카테고리 에 검색어 포함 시 조회
-    private BooleanExpression searchByLike(String searchBy, String searchQuery){
-
-        if(StringUtils.equals("itemNm", searchBy)){
+    private BooleanExpression searchByLike(String searchBy, String searchQuery) {
+        if(StringUtils.equals("itemNm", searchBy)) {
             return QItem.item.itemNm.like("%" + searchQuery + "%");
-        }else if(StringUtils.equals("createBy", searchBy)){
+        } else if(StringUtils.equals("createdBy", searchBy)) {
             return QItem.item.createdBy.like("%" + searchQuery + "%");
-        }else if(StringUtils.equals("cateName", searchBy)){
-            return QCategory.category.cateName.like("%"+ searchQuery + "%");
         }
+
         return null;
     }
+
+    private BooleanExpression searchCategory(ItemComplexSearchDto itemComplexSearchDto) {
+        Long cateCode = itemComplexSearchDto.getSearchCategory();
+
+        return cateCode == null ? null : QItem.item.category.cateCode.eq(cateCode);
+    }
+
+    private BooleanExpression searchTag(ItemComplexSearchDto itemComplexSearchDto) {
+        List<Long> tagIds = itemComplexSearchDto.getSearchTagIds();
+
+        return tagIds == null || tagIds.isEmpty() ? null : QItemTag.itemTag.tag.id.in(tagIds);
+    }
+
+    private OrderSpecifier searchOrderBy(ItemComplexSearchDto itemComplexSearchDto) {
+        ItemComplexSearchSortColumn sortColumn = itemComplexSearchDto.getSortColumn();
+        Sort.Direction sortDirection = itemComplexSearchDto.getSortDirection();
+
+        OrderSpecifier orderSpecifier = null;
+
+        if(sortColumn.equals(ItemComplexSearchSortColumn.REG_TIME)) {
+            if(sortDirection.isAscending()) {
+                orderSpecifier = QItem.item.regTime.asc();
+            } else {
+                orderSpecifier = QItem.item.regTime.desc();
+            }
+        } else if(sortColumn.equals(ItemComplexSearchSortColumn.NAME)) {
+            if(sortDirection.isAscending()) {
+                orderSpecifier = QItem.item.itemNm.asc();
+            } else {
+                orderSpecifier = QItem.item.itemNm.desc();
+            }
+        } else if(sortColumn.equals(ItemComplexSearchSortColumn.PRICE)) {
+            if(sortDirection.isAscending()) {
+                orderSpecifier = QItem.item.price.asc();
+            } else {
+                orderSpecifier = QItem.item.price.desc();
+            }
+        }
+
+        return orderSpecifier;
+    }
+
 
 
     @Override
@@ -95,8 +138,7 @@ public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // Ite
 
 
     @Override
-    public Page<MainItemDto> getMainItemPage(ItemSearchDto itemSearchDto,
-                                             Pageable pageable) {
+    public Page<MainItemDto> getMainItemPage(ItemSearchDto itemSearchDto, Pageable pageable) {
         QItem item = QItem.item;
         QItemImg itemImg = QItemImg.itemImg;
 
@@ -107,11 +149,13 @@ public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // Ite
                                 item.itemNm,
                                 item.itemDetail,
                                 itemImg.imgUrl,
-                                item.price)
+                                item.price,
+                                item.shippingFee
                         )
+                )
                 .from(itemImg)
                 .join(itemImg.item, item)
-                .where(itemImg.repimgYn.eq("Y"))
+                .where(itemImg.repImgYn.eq("Y"))
                 .where(itemNmLike(itemSearchDto.getSearchQuery()))
                 .orderBy(item.id.desc())
                 .offset(pageable.getOffset())
@@ -119,14 +163,14 @@ public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // Ite
                 .fetchResults();
 
         List<MainItemDto> content = results.getResults();
-        long total = results.getTotal();
-        return new PageImpl<>(content, pageable, total);
 
+        long total = results.getTotal();
+
+        return new PageImpl<>(content, pageable, total);
     }
 
     @Override
-    public Page<GiftMainItemDto> getGiftItemPage(ItemSearchDto itemSearchDto,
-                                             Pageable pageable, Long cateCode) {
+    public Page<GiftMainItemDto> getGiftItemPage(ItemSearchDto itemSearchDto, Pageable pageable, Long cateCode) {
         QItem item = QItem.item;
         QItemImg itemImg = QItemImg.itemImg;
         QCategory category = QCategory.category;
@@ -144,7 +188,7 @@ public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // Ite
                 .from(itemImg)
                 .join(itemImg.item, item)
                 .join(item.category, category)
-                .where(itemImg.repimgYn.eq("Y"))
+                .where(itemImg.repImgYn.eq("Y"))
                 .where(itemNmLike(itemSearchDto.getSearchQuery()))
                 .where(category.cateCode.eq(cateCode))
                 .orderBy(item.id.desc())
@@ -154,11 +198,90 @@ public class ItemRepositoryCustomImpl implements ItemRepositoryCustom{    // Ite
 
         List<GiftMainItemDto> content = results.getResults();
 
-        log.info(content.toString());
-
         long total = results.getTotal();
         return new PageImpl<>(content, pageable, total);
+    }
+    @Override
+    public Page<MainItemDto> getDetailSearchPage(String[] filters, ItemSearchDto itemSearchDto, Pageable pageable) {
+        QItem item = QItem.item;
+        QItemImg itemImg = QItemImg.itemImg;
+        QTag tag = QTag.tag;
+        com.shop.entity.QItemTag itemTag = com.shop.entity.QItemTag.itemTag;
 
+        List<String> filterList = Arrays.stream(filters).collect(Collectors.toList());
+
+        JPQLQuery<MainItemDto> query = queryFactory
+                .select(
+                        new QMainItemDto(
+                                item.id,
+                                item.itemNm,
+                                item.itemDetail,
+                                itemImg.imgUrl,
+                                item.price,
+                                item.shippingFee
+                        )
+                )
+                .from(itemImg)
+                .join(itemImg.item, item)
+                .leftJoin(itemTag).on(itemTag.item.eq(itemImg.item))
+                .leftJoin(itemTag.tag, tag)
+                .where(itemImg.repImgYn.eq("Y"))        //상품 이미지 경우 대표 상품 이미지만 불러옴
+                .where(itemNmLike(itemSearchDto.getSearchQuery()))
+                .groupBy(itemImg.item)
+                .orderBy(item.id.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize());
+
+        if(filterList.size() > 0) {
+            query.where(tag.tagNm.in(filterList));
+        }
+
+        QueryResults<MainItemDto> results = query.fetchResults();
+
+        List<MainItemDto> content = results.getResults();
+        long total = results.getTotal();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public Page<MainItemDto> getComplexSearchPage(ItemComplexSearchDto itemComplexSearchDto, Pageable pageable) {
+        QItem item = QItem.item;
+        QItemImg itemImg = QItemImg.itemImg;
+        QItemTag itemTag = QItemTag.itemTag;
+        QTag tag = QTag.tag;
+
+        QueryResults<MainItemDto> results = queryFactory
+                .select(
+                        new QMainItemDto(
+                                item.id,
+                                item.itemNm,
+                                item.itemDetail,
+                                itemImg.imgUrl,
+                                item.price,
+                                item.shippingFee
+                        )
+                )
+                .from(itemImg)
+                .join(itemImg.item, item)
+                .leftJoin(itemTag).on(itemTag.item.eq(itemImg.item))
+                .leftJoin(itemTag.tag, tag)
+                .where(itemImg.repImgYn.eq("Y"))
+                .where(itemNmLike(itemComplexSearchDto.getSearchQuery()))
+                .where(searchCategory(itemComplexSearchDto))
+                .where(searchTag(itemComplexSearchDto))
+                .groupBy(itemImg.item)
+                .orderBy(searchOrderBy(itemComplexSearchDto))
+                .orderBy(item.id.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetchResults();
+
+        List<MainItemDto> content = results.getResults();
+
+        long total = results.getTotal();
+
+        return new PageImpl<>(content, pageable, total);
     }
 
 }
