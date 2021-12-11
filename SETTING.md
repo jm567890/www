@@ -6,7 +6,7 @@
     ***처음엔 create***, 테이블 생성 이후 validate로 수정  
     create 유지 시 테이블 초기화 다시 생성됨 -> 번거로움  
  
-  - database 설정
+  - database 설정  
     mariadb 설정이 아닌 mysql 로컬 데이터 사용 바람
   
   
