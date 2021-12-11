@@ -8,5 +8,8 @@
  
   - database 설정  
     mariadb 설정이 아닌 mysql 로컬 데이터 사용 바람
+    
+  - 폴더 생성
+  - C:\shop\item
   
   
