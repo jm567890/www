@@ -19,7 +19,7 @@
 
 ## 🌠 세팅 사항  
 ***❗ Setting.md 참고 ❗***  
-footer2.html >> footer.html
+footer2.html >> footer.html  
 itemList2.html >> itemList.html
 
 ## 🌠 프로젝트 구조
